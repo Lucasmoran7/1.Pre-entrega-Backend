@@ -41,4 +41,7 @@ router.get('/:pid', async (req, res) => {
       res.status(500).json({ error: "Error al eliminar el producto." });
     }
   });
+
+  module.exports = router;
+
   
