@@ -1,6 +1,10 @@
 const express = require("express");
 const router = express.Router();
+const CartManager = require('../managers/CartManager');
+const ProductManager = require('../managers/ProductManager');
 
+const cartManager = new CartManager();
+const productManager = new ProductManager();
 
 
 // Obtener productos de un carrito
@@ -23,9 +27,12 @@ router.get('/:cid', async (req, res) => {
       if (!updatedCart) {
         return res.status(404).json({ message: "Carrito o producto no encontrado." });
       }
-      res.json(updatedCart);
+      res.json({message: "Producto agregado correctamente", cart: updatedCart});
     } catch (error) {
+      console.error(error);
       res.status(500).json({ error: "Error al agregar el producto al carrito." });
     }
   });
+
+  module.exports = router;
   

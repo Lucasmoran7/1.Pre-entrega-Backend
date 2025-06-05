@@ -2,32 +2,37 @@ const fs = require('fs');
 const productsFile = './data/products.json';
 
 class ProductManager {
-  // Obtener todos los productos
-  async getProducts() {
+    async getProducts() {
     try {
       const data = await fs.promises.readFile(productsFile, 'utf-8');
-      return JSON.parse(data);
+      return data ? JSON.parse(data) : []; // Retorna un array vacío si no hay datos
     } catch (error) {
       throw new Error("Error al leer los productos");
     }
   }
 
-  // Obtener un producto por ID
+  // Obtener todos los productos
   async getProductById(pid) {
     try {
       const products = await this.getProducts();
-      return products.find(p => p.id === parseInt(pid)); 
+      const product = products.find(p => p.id === parseInt(pid));
+      return product || null; // Retorna null si no se encuentra el producto 
     } catch (error) {
       throw new Error("Error al obtener el producto");
     }
   }
 
-  // Agregar un nuevo producto
-  async addProduct(product) {
+  // Agregar un producto nuevo
+  async addProduct(productData) {
     try {
       const products = await this.getProducts();
-      products.push(product);
-      await fs.promises.writeFile(productsFile, JSON.stringify(products, null, 2)); 
+      const newProduct = {
+        id: products.length > 0 ? products[products.length - 1].id + 1 : 1,
+        ...productData
+      };
+      products.push(newProduct);
+      await fs.promises.writeFile(productsFile, JSON.stringify(products, null, 2));
+      return newProduct; 
     } catch (error) {
       throw new Error("Error al agregar el producto");
     }

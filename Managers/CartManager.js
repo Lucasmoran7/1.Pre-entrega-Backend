@@ -1,6 +1,9 @@
 const fs = require('fs');
 const cartsFile = './data/carts.json';
 const ProductManager = require('./ProductManager'); 
+const { pid } = require('process');
+const productManager = new ProductManager(); 
+
 
 class CartManager {
   // Obtener todos los carritos

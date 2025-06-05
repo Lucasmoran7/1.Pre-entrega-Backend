@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();  
 const ProductManager = require('../managers/ProductManager');
 
+const productManager = new ProductManager();
 
 // Obtener un producto por su ID
 router.get('/:pid', async (req, res) => {

@@ -4,17 +4,16 @@ const port = 8080;
 
 const productsRouter = require('./routes/products');
 const cartsRouter = require('./routes/carts');
-console.log("productsRouter:", productsRouter);
-
-// managers
-const ProductManager = require('./managers/ProductManager');
-const CartManager = require('./managers/CartManager');
 
 app.use(express.json());
 
 // rutas
 app.use('/api/products', productsRouter);
 app.use('/api/carts', cartsRouter);
+
+app.get('/', (req, res) => {
+  res.send('¡Bienvenido a la API de Productos y Carritos!');
+});
 
 // servidor
 app.listen(port, () => {
