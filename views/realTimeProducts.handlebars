@@ -1,0 +1,59 @@
+<h1>Lista en tiempo real de productos</h1>
+
+<form id="formAgregar">
+  <input type="text" name="title" placeholder="Nombre" required />
+  <input type="text" name="description" placeholder="Descripción" required />
+  <input type="text" name="code" placeholder="Código" required />
+  <input type="number" name="price" placeholder="Precio" required />
+  <input type="number" name="stock" placeholder="Stock" required />
+  <input type="text" name="category" placeholder="Categoría" required />
+  <input type="text" name="thumbnails" placeholder="Imagen (URL)" />
+  <button type="submit">Agregar producto</button>
+</form>
+
+<form id="formEliminar">
+  <input type="number" name="idEliminar" placeholder="ID del producto a eliminar" required />
+  <button type="submit">Eliminar producto</button>
+</form>
+
+<ul id="listaProductos">
+  {{#each products}}
+    <li><strong>{{title}}</strong> - ${{price}}</li>
+  {{/each}}
+</ul>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io();
+
+  document.getElementById('formAgregar').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const formData = new FormData(this);
+    const product = Object.fromEntries(formData.entries());
+
+    // Convertir thumbnail en array si es un solo valor
+    if (product.thumbnails) {
+      product.thumbnails = [product.thumbnails];
+    }
+
+    socket.emit('agregarProducto', product);
+    this.reset();
+  });
+
+  document.getElementById('formEliminar').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const idEliminar = this.idEliminar.value;
+    socket.emit('eliminarProducto', idEliminar);
+    this.reset();
+  });
+
+  socket.on('actualizarProductos', function(products) {
+    const listaProductos = document.getElementById('listaProductos');
+    listaProductos.innerHTML = '';
+    products.forEach(product => {
+      const li = document.createElement('li');
+      li.innerHTML = `<strong>${product.title}</strong> - $${product.price}`;
+      listaProductos.appendChild(li);
+    });
+  });
+</script>
