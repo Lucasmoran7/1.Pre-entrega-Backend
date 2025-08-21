@@ -6,12 +6,12 @@ const path = require('path');
 const app = express();
 const port = 8080;
 
-// Routes
+// Routers
 const productsRouter = require('./routes/products');
 const cartsRouter = require('./routes/carts');
 
 // Managers
-const ProductManager = require('./managers/ProductManager');
+const ProductManager = require('./Managers/ProductManager');
 const productManager = new ProductManager();
 
 // Middleware
@@ -19,12 +19,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Handlebars setup
+// Configuración de Handlebars
 app.engine('handlebars', exphbs.engine());
 app.set('view engine', 'handlebars');
 app.set('views', path.join(__dirname, 'views'));
 
-// HTTP Routes
+// Rutas API
 app.use('/api/products', productsRouter);
 app.use('/api/carts', cartsRouter);
 
@@ -39,7 +39,7 @@ app.get('/realtimeproducts', async (req, res) => {
   res.render('realTimeProducts', { products });
 });
 
-// Server + Socket.io
+// Servidor + WebSockets
 const httpServer = app.listen(port, () => {
   console.log(`Servidor escuchando en puerto ${port}`);
 });
@@ -56,7 +56,7 @@ io.on('connection', (socket) => {
     io.emit('productosActualizados', productos);
   });
 
-  // Escuchar eliminación
+  // Escuchar eliminación de producto
   socket.on('eliminarProducto', async (id) => {
     await productManager.deleteProduct(id);
     const productos = await productManager.getProducts();

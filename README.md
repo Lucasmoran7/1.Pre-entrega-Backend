@@ -43,6 +43,9 @@ proyecto-final/
 
 ---
 
+
+---
+
 ## 📌 Funcionalidades principales
 
 ### 🧩 Productos (`/api/products`)
@@ -61,18 +64,26 @@ proyecto-final/
 ## 🖼️ Vistas con Handlebars
 
 ### `/` → `home.handlebars`
-Muestra una lista estática de productos.
+- Muestra una lista de productos disponibles al cargar la página.  
+- Esta vista **no tiene actualización en tiempo real**.
 
 ### `/realtimeproducts` → `realTimeProducts.handlebars`
-- Permite **agregar y eliminar productos** con formularios.
-- La lista de productos se **actualiza automáticamente** gracias a WebSockets.
+- Permite **agregar y eliminar productos** mediante formularios.  
+- La lista de productos se **actualiza automáticamente** en todos los clientes conectados gracias a WebSockets.
 
 ---
 
 ## 🔄 WebSockets con Socket.IO
 
-- El servidor emite `actualizarProductos` cada vez que se crea o elimina un producto.
-- Los clientes conectados actualizan su lista en tiempo real.
+- **Eventos utilizados:**
+  - `nuevoProducto` → Emitido al crear un producto desde el formulario.
+  - `eliminarProducto` → Emitido al eliminar un producto por ID.
+  - `productosActualizados` → El servidor emite este evento para actualizar la lista en todos los clientes.
+- Los formularios incluyen **validaciones básicas**:
+  - Precio y stock deben ser números válidos.
+  - Campos obligatorios no pueden estar vacíos.
+  - `thumbnails` se convierte en un array automáticamente si se ingresa un solo valor.
+- Mensajes de alerta se muestran al agregar o eliminar productos.
 
 ---
 
@@ -89,6 +100,6 @@ npm install
 
 
 
+
 Lucas Moran
 Curso Backend - Coderhouse
-Segunda Pre-entrega

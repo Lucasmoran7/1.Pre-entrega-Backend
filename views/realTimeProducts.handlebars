@@ -26,28 +26,49 @@
 <script>
   const socket = io();
 
+  // AGREGAR producto con validaciones
   document.getElementById('formAgregar').addEventListener('submit', function(event) {
     event.preventDefault();
     const formData = new FormData(this);
     const product = Object.fromEntries(formData.entries());
 
-    // Convertir thumbnail en array si es un solo valor
-    if (product.thumbnails) {
-      product.thumbnails = [product.thumbnails];
+    // Validaciones
+    if (!product.title || !product.description || !product.code || !product.category) {
+      alert("Por favor completa todos los campos obligatorios.");
+      return;
     }
 
-    socket.emit('agregarProducto', product);
+    product.price = parseFloat(product.price);
+    product.stock = parseInt(product.stock);
+    if (isNaN(product.price) || isNaN(product.stock)) {
+      alert("Precio y Stock deben ser números válidos.");
+      return;
+    }
+
+    // Thumbnails en array
+    if (product.thumbnails) product.thumbnails = [product.thumbnails];
+    product.status = true;
+
+    socket.emit('nuevoProducto', product);
+    alert("Producto agregado correctamente!");
     this.reset();
   });
 
+  // ELIMINAR producto
   document.getElementById('formEliminar').addEventListener('submit', function(event) {
     event.preventDefault();
-    const idEliminar = this.idEliminar.value;
+    const idEliminar = parseInt(this.idEliminar.value);
+    if (isNaN(idEliminar)) {
+      alert("ID inválido");
+      return;
+    }
     socket.emit('eliminarProducto', idEliminar);
+    alert("Producto eliminado si existía.");
     this.reset();
   });
 
-  socket.on('actualizarProductos', function(products) {
+  // ACTUALIZAR lista
+  socket.on('productosActualizados', function(products) {
     const listaProductos = document.getElementById('listaProductos');
     listaProductos.innerHTML = '';
     products.forEach(product => {
