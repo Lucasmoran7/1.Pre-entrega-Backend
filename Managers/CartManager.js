@@ -1,47 +1,65 @@
-const fs = require('fs');
-const cartsFile = './data/carts.json';
-const ProductManager = require('./ProductManager');
-const productManager = new ProductManager();
+const Cart = require('../models/Cart');
+const Product = require('../models/Product');
 
 class CartManager {
-  async getCarts() {
-    try {
-      const data = await fs.promises.readFile(cartsFile, 'utf-8');
-      return JSON.parse(data);
-    } catch (error) {
-      throw new Error("Error al leer los carritos");
-    }
-  }
-
   async getCartById(cid) {
-    const carts = await this.getCarts();
-    return carts.find(c => c.id === parseInt(cid));
+    return await Cart.findById(cid).populate('products.product');
   }
 
-  async addCart(cart) {
-    const carts = await this.getCarts();
-    carts.push(cart);
-    await fs.promises.writeFile(cartsFile, JSON.stringify(carts, null, 2));
+  async addCart() {
+    const cart = new Cart({ products: [] });
+    return await cart.save();
   }
 
   async addProductToCart(cid, pid) {
-    const carts = await this.getCarts();
-    const cart = carts.find(c => c.id === parseInt(cid));
-    const product = await productManager.getProductById(pid);
+    const cart = await Cart.findById(cid);
+    if (!cart) return null;
 
-    if (!cart || !product) return null;
+    const index = cart.products.findIndex(p => p.product.toString() === pid);
+    if (index !== -1) cart.products[index].quantity += 1;
+    else cart.products.push({ product: pid, quantity: 1 });
 
-    const productInCart = cart.products.find(p => p.product === parseInt(pid));
-    if (productInCart) {
-      productInCart.quantity += 1;
-    } else {
-      cart.products.push({ product: parseInt(pid), quantity: 1 });
-    }
+    await cart.save();
+    return cart;
+  }
 
-    await fs.promises.writeFile(cartsFile, JSON.stringify(carts, null, 2));
+  async updateCart(cid, productsArray) {
+    const cart = await Cart.findById(cid);
+    if (!cart) return null;
+    cart.products = productsArray;
+    await cart.save();
+    return cart;
+  }
+
+  async updateProductQuantity(cid, pid, quantity) {
+    const cart = await Cart.findById(cid);
+    if (!cart) return null;
+    const productInCart = cart.products.find(p => p.product.toString() === pid);
+    if (!productInCart) return null;
+    productInCart.quantity = quantity;
+    await cart.save();
+    return cart;
+  }
+
+  async deleteProductFromCart(cid, pid) {
+    const cart = await Cart.findById(cid);
+    if (!cart) return null;
+    cart.products = cart.products.filter(p => p.product.toString() !== pid);
+    await cart.save();
+    return cart;
+  }
+
+  async clearCart(cid) {
+    const cart = await Cart.findById(cid);
+    if (!cart) return null;
+    cart.products = [];
+    await cart.save();
     return cart;
   }
 }
 
 module.exports = CartManager;
+const fs = require('fs');
+const cartsFile = './data/carts.json';
+
 

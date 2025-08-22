@@ -1,65 +1,80 @@
-const express = require('express');
-const { Server } = require('socket.io');
-const exphbs = require('express-handlebars');
-const path = require('path');
+import express from "express";
+import { engine } from "express-handlebars";
+import { Server } from "socket.io";
+import mongoose from "mongoose";
+import path from "path";
+import { fileURLToPath } from "url";
+
+import productsRouter from "./routes/products.js";
+import cartsRouter from "./routes/carts.js";
+import Product from "./models/Product.js";
 
 const app = express();
-const port = 8080;
+const PORT = 8080;
 
-// Routers
-const productsRouter = require('./routes/products');
-const cartsRouter = require('./routes/carts');
+// 🟢 Conexión a MongoDB (ajusta la URI si tenés otro usuario o cluster)
+mongoose
+  .connect("mongodb://127.0.0.1:27017/proyectoFinalBackend")
+  .then(() => console.log("✅ Conectado a MongoDB"))
+  .catch((err) => console.error("❌ Error de conexión:", err));
 
-// Managers
-const ProductManager = require('./Managers/ProductManager');
-const productManager = new ProductManager();
-
-// Middleware
+// Middleware para trabajar con JSON y formularios
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
 
-// Configuración de Handlebars
-app.engine('handlebars', exphbs.engine());
-app.set('view engine', 'handlebars');
-app.set('views', path.join(__dirname, 'views'));
+// Configuración de rutas estáticas (JS frontend)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use(express.static(path.join(__dirname, "public")));
+
+// 🟢 Configuración de Handlebars
+app.engine("handlebars", engine());
+app.set("view engine", "handlebars");
+app.set("views", path.join(__dirname, "views"));
 
 // Rutas API
-app.use('/api/products', productsRouter);
-app.use('/api/carts', cartsRouter);
+app.use("/api/products", productsRouter);
+app.use("/api/carts", cartsRouter);
 
-// Vistas
-app.get('/', async (req, res) => {
-  const products = await productManager.getProducts();
-  res.render('home', { products });
+// 🟢 Vista principal con productos
+app.get("/", async (req, res) => {
+  const products = await Product.find().lean(); // .lean() para que handlebars pueda leerlos
+  res.render("home", { products });
 });
 
-app.get('/realtimeproducts', async (req, res) => {
-  const products = await productManager.getProducts();
-  res.render('realTimeProducts', { products });
+// 🟢 Vista en tiempo real
+app.get("/realtimeproducts", async (req, res) => {
+  const products = await Product.find().lean();
+  res.render("realTimeProducts", { products });
 });
 
-// Servidor + WebSockets
-const httpServer = app.listen(port, () => {
-  console.log(`Servidor escuchando en puerto ${port}`);
-});
+// Levantar servidor
+const httpServer = app.listen(PORT, () =>
+  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`)
+);
 
+// 🟢 Websocket con Socket.io
 const io = new Server(httpServer);
 
-io.on('connection', (socket) => {
-  console.log('Cliente conectado por Socket.io');
+io.on("connection", (socket) => {
+  console.log("🟢 Nuevo cliente conectado");
 
-  // Escuchar nuevo producto
-  socket.on('nuevoProducto', async (nuevoProd) => {
-    await productManager.addProduct(nuevoProd);
-    const productos = await productManager.getProducts();
-    io.emit('productosActualizados', productos);
+  // Enviar lista inicial de productos
+  Product.find()
+    .lean()
+    .then((products) => socket.emit("productos", products));
+
+  // Escuchar cuando un cliente agrega producto
+  socket.on("agregarProducto", async (data) => {
+    await Product.create(data);
+    const productosActualizados = await Product.find().lean();
+    io.emit("productos", productosActualizados);
   });
 
-  // Escuchar eliminación de producto
-  socket.on('eliminarProducto', async (id) => {
-    await productManager.deleteProduct(id);
-    const productos = await productManager.getProducts();
-    io.emit('productosActualizados', productos);
+  // Escuchar cuando un cliente elimina producto
+  socket.on("eliminarProducto", async (id) => {
+    await Product.findByIdAndDelete(id);
+    const productosActualizados = await Product.find().lean();
+    io.emit("productos", productosActualizados);
   });
 });

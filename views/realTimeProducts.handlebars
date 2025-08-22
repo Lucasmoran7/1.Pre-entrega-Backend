@@ -1,80 +1,20 @@
-<h1>Lista en tiempo real de productos</h1>
+<h1>⚡ Productos en tiempo real</h1>
 
-<form id="formAgregar">
-  <input type="text" name="title" placeholder="Nombre" required />
-  <input type="text" name="description" placeholder="Descripción" required />
-  <input type="text" name="code" placeholder="Código" required />
-  <input type="number" name="price" placeholder="Precio" required />
-  <input type="number" name="stock" placeholder="Stock" required />
-  <input type="text" name="category" placeholder="Categoría" required />
-  <input type="text" name="thumbnails" placeholder="Imagen (URL)" />
-  <button type="submit">Agregar producto</button>
-</form>
-
-<form id="formEliminar">
-  <input type="number" name="idEliminar" placeholder="ID del producto a eliminar" required />
-  <button type="submit">Eliminar producto</button>
-</form>
-
-<ul id="listaProductos">
+<ul id="product-list">
   {{#each products}}
-    <li><strong>{{title}}</strong> - ${{price}}</li>
+    <li id="{{_id}}">
+      <strong>{{title}}</strong> - ${{price}}
+      <button onclick="eliminarProducto('{{_id}}')">Eliminar</button>
+    </li>
   {{/each}}
 </ul>
 
+<h2>➕ Agregar producto</h2>
+<form id="form-producto">
+  <input type="text" name="title" placeholder="Nombre" required />
+  <input type="number" name="price" placeholder="Precio" required />
+  <button type="submit">Agregar</button>
+</form>
+
 <script src="/socket.io/socket.io.js"></script>
-<script>
-  const socket = io();
-
-  // AGREGAR producto con validaciones
-  document.getElementById('formAgregar').addEventListener('submit', function(event) {
-    event.preventDefault();
-    const formData = new FormData(this);
-    const product = Object.fromEntries(formData.entries());
-
-    // Validaciones
-    if (!product.title || !product.description || !product.code || !product.category) {
-      alert("Por favor completa todos los campos obligatorios.");
-      return;
-    }
-
-    product.price = parseFloat(product.price);
-    product.stock = parseInt(product.stock);
-    if (isNaN(product.price) || isNaN(product.stock)) {
-      alert("Precio y Stock deben ser números válidos.");
-      return;
-    }
-
-    // Thumbnails en array
-    if (product.thumbnails) product.thumbnails = [product.thumbnails];
-    product.status = true;
-
-    socket.emit('nuevoProducto', product);
-    alert("Producto agregado correctamente!");
-    this.reset();
-  });
-
-  // ELIMINAR producto
-  document.getElementById('formEliminar').addEventListener('submit', function(event) {
-    event.preventDefault();
-    const idEliminar = parseInt(this.idEliminar.value);
-    if (isNaN(idEliminar)) {
-      alert("ID inválido");
-      return;
-    }
-    socket.emit('eliminarProducto', idEliminar);
-    alert("Producto eliminado si existía.");
-    this.reset();
-  });
-
-  // ACTUALIZAR lista
-  socket.on('productosActualizados', function(products) {
-    const listaProductos = document.getElementById('listaProductos');
-    listaProductos.innerHTML = '';
-    products.forEach(product => {
-      const li = document.createElement('li');
-      li.innerHTML = `<strong>${product.title}</strong> - $${product.price}`;
-      listaProductos.appendChild(li);
-    });
-  });
-</script>
+<script src="/js/realtime.js"></script>

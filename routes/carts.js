@@ -1,28 +1,37 @@
-const express = require('express');
-const router = express.Router();
-const CartManager = require('../Managers/CartManager');
-const cartManager = new CartManager();
+import { Router } from "express";
+import Cart from "../models/Cart.js";
 
-// Obtener productos de un carrito
-router.get('/:cid', async (req, res) => {
-  try {
-    const cart = await cartManager.getCartById(req.params.cid);
-    if (!cart) return res.status(404).json({ message: "Carrito no encontrado" });
-    res.json(cart.products);
-  } catch (error) {
-    res.status(500).json({ error: "Error al obtener el carrito" });
-  }
+const router = Router();
+
+// 📌 Crear carrito
+router.post("/", async (req, res) => {
+  const newCart = await Cart.create({ products: [] });
+  res.status(201).json(newCart);
 });
 
-// Agregar producto a un carrito
-router.post('/:cid/product/:pid', async (req, res) => {
-  try {
-    const updatedCart = await cartManager.addProductToCart(req.params.cid, req.params.pid);
-    if (!updatedCart) return res.status(404).json({ message: "Carrito o producto no encontrado" });
-    res.json({ message: "Producto agregado correctamente", cart: updatedCart });
-  } catch (error) {
-    res.status(500).json({ error: "Error al agregar el producto al carrito" });
-  }
+// 📌 Obtener carrito por ID
+router.get("/:id", async (req, res) => {
+  const cart = await Cart.findById(req.params.id).populate("products.product");
+  if (!cart) return res.status(404).json({ error: "Carrito no encontrado" });
+  res.json(cart);
 });
 
-module.exports = router;
+// 📌 Agregar producto a un carrito
+router.post("/:id/products/:pid", async (req, res) => {
+  const cart = await Cart.findById(req.params.id);
+  if (!cart) return res.status(404).json({ error: "Carrito no encontrado" });
+
+  const { pid } = req.params;
+  const existingProduct = cart.products.find((p) => p.product.toString() === pid);
+
+  if (existingProduct) {
+    existingProduct.quantity++;
+  } else {
+    cart.products.push({ product: pid, quantity: 1 });
+  }
+
+  await cart.save();
+  res.json(cart);
+});
+
+export default router;

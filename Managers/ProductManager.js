@@ -1,74 +1,51 @@
-const fs = require('fs');
-const productsFile = './data/products.json';
+const Product = require('../models/Product');
 
 class ProductManager {
-  // Obtener todos los productos
-  async getProducts() {
-    try {
-      const data = await fs.promises.readFile(productsFile, 'utf-8');
-      return data ? JSON.parse(data) : [];
-    } catch (error) {
-      throw new Error("Error al leer los productos");
-    }
+  async getProducts({ limit = 10, page = 1, sort, query } = {}) {
+    const filter = query ? { category: query } : {};
+    const options = {
+      limit: parseInt(limit),
+      skip: (parseInt(page) - 1) * parseInt(limit),
+    };
+    if (sort === 'asc') options.sort = { price: 1 };
+    if (sort === 'desc') options.sort = { price: -1 };
+
+    const totalDocs = await Product.countDocuments(filter);
+    const products = await Product.find(filter, null, options);
+    const totalPages = Math.ceil(totalDocs / limit);
+
+    return {
+      status: 'success',
+      payload: products,
+      totalPages,
+      prevPage: page > 1 ? page - 1 : null,
+      nextPage: page < totalPages ? parseInt(page) + 1 : null,
+      page: parseInt(page),
+      hasPrevPage: page > 1,
+      hasNextPage: page < totalPages,
+      prevLink: page > 1 ? `/api/products?limit=${limit}&page=${page-1}` : null,
+      nextLink: page < totalPages ? `/api/products?limit=${limit}&page=${page+1}` : null
+    };
   }
 
-  // Obtener producto por ID
   async getProductById(pid) {
-    try {
-      const products = await this.getProducts();
-      const product = products.find(p => p.id === parseInt(pid));
-      return product || null;
-    } catch (error) {
-      throw new Error("Error al obtener el producto");
-    }
+    return await Product.findById(pid);
   }
 
-  // Agregar nuevo producto
-  async addProduct(productData) {
-    try {
-      const products = await this.getProducts();
-      const newProduct = {
-        id: products.length > 0 ? products[products.length - 1].id + 1 : 1,
-        ...productData
-      };
-      products.push(newProduct);
-      await fs.promises.writeFile(productsFile, JSON.stringify(products, null, 2));
-      return newProduct;
-    } catch (error) {
-      throw new Error("Error al agregar el producto");
-    }
+  async addProduct(data) {
+    const product = new Product(data);
+    return await product.save();
   }
 
-  // Actualizar producto
   async updateProduct(pid, updatedFields) {
-    try {
-      const products = await this.getProducts();
-      const productIndex = products.findIndex(p => p.id === parseInt(pid));
-      if (productIndex === -1) return null;
-
-      const updatedProduct = { ...products[productIndex], ...updatedFields };
-      products[productIndex] = updatedProduct;
-      await fs.promises.writeFile(productsFile, JSON.stringify(products, null, 2));
-      return updatedProduct;
-    } catch (error) {
-      throw new Error("Error al actualizar el producto");
-    }
+    return await Product.findByIdAndUpdate(pid, updatedFields, { new: true });
   }
 
-  // Eliminar producto
   async deleteProduct(pid) {
-    try {
-      const products = await this.getProducts();
-      const productIndex = products.findIndex(p => p.id === parseInt(pid));
-      if (productIndex === -1) return null;
-
-      products.splice(productIndex, 1);
-      await fs.promises.writeFile(productsFile, JSON.stringify(products, null, 2));
-      return true;
-    } catch (error) {
-      throw new Error("Error al eliminar el producto");
-    }
+    return await Product.findByIdAndDelete(pid);
   }
 }
 
 module.exports = ProductManager;
+const fs = require('fs');
+const productsFile = './data/products.json';
