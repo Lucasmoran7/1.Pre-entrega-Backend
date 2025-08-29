@@ -1,16 +1,16 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
 const productSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  description: { type: String, required: true },
-  code: { type: String, required: true },
+  name: { type: String, required: true },
   price: { type: Number, required: true },
-  status: { type: Boolean, default: true },
-  stock: { type: Number, required: true },
   category: { type: String, required: true },
-  thumbnails: { type: [String], default: [] }
+  stock: { type: Number, required: true },
+  description: { type: String },
+  image: { type: String }
+}, {
+  timestamps: true // 👌 agrega createdAt y updatedAt
 });
 
-module.exports = mongoose.model('Product', productSchema);
-const fs = require('fs');
-const productsFile = './data/products.json';
+const Product = mongoose.model("Product", productSchema);
+
+export default Product;

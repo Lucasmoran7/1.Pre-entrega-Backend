@@ -1,41 +1,71 @@
-import { Router } from "express";
-import Product from "../models/Product.js";
+import express from "express";
+import Product from "../models/Product.js"; // ✅ solo importamos
 
-const router = Router();
+const router = express.Router();
 
-// 📌 Obtener todos los productos
+// GET - Obtener todos los productos
 router.get("/", async (req, res) => {
-  const products = await Product.find();
-  res.json(products);
+  try {
+    const products = await Product.find();
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
-// 📌 Obtener un producto por ID
+// GET - Obtener un producto por ID
 router.get("/:id", async (req, res) => {
-  const product = await Product.findById(req.params.id);
-  if (!product) return res.status(404).json({ error: "Producto no encontrado" });
-  res.json(product);
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: "Producto no encontrado" });
+    }
+    res.json(product);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
-// 📌 Crear producto
+// POST - Crear un producto
 router.post("/", async (req, res) => {
-  const newProduct = await Product.create(req.body);
-  res.status(201).json(newProduct);
+  try {
+    const newProduct = new Product(req.body);
+    await newProduct.save();
+    res.status(201).json(newProduct);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
 });
 
-// 📌 Actualizar producto
+// PUT - Actualizar un producto
 router.put("/:id", async (req, res) => {
-  const updated = await Product.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-  });
-  if (!updated) return res.status(404).json({ error: "Producto no encontrado" });
-  res.json(updated);
+  try {
+    const updatedProduct = await Product.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+    if (!updatedProduct) {
+      return res.status(404).json({ message: "Producto no encontrado" });
+    }
+    res.json(updatedProduct);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
 });
 
-// 📌 Eliminar producto
+// DELETE - Eliminar un producto
 router.delete("/:id", async (req, res) => {
-  const deleted = await Product.findByIdAndDelete(req.params.id);
-  if (!deleted) return res.status(404).json({ error: "Producto no encontrado" });
-  res.json({ message: "Producto eliminado", deleted });
+  try {
+    const deletedProduct = await Product.findByIdAndDelete(req.params.id);
+    if (!deletedProduct) {
+      return res.status(404).json({ message: "Producto no encontrado" });
+    }
+    res.json({ message: "Producto eliminado correctamente" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 export default router;
+
